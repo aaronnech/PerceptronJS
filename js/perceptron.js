@@ -109,11 +109,7 @@ Perceptron.prototype.classify = function(input) {
 
 	this.setInput_(input);
 	var score = this.getScore_();
-	if (score > this.threshold_) {
-		return true;
-	} else {
-		return false;
-	}
+	return score > this.threshold_;
 };
 
 
