@@ -1,5 +1,5 @@
 /**
- * A Perceptron is a single artificial neuron-like structure that performs
+ * A BinaryPerceptron is a single artificial neuron-like structure that performs
  * classification for linearly seperable data in N dimensions.
  * @param {int} inputDimension The space of input that can be fed.
  * @param {int} learningRate The rate at which this perceptron learns
@@ -7,7 +7,7 @@
  *                          the perceptron is greater than, it will classify
  *                          as true.
  */
-function Perceptron(inputDimension, learningRate, threshold) {
+function BinaryPerceptron(inputDimension, learningRate, threshold) {
 	this.inputs_ = [];
 	this.inputWeights_ = [];
 	this.learningRate_ = learningRate;
@@ -28,7 +28,7 @@ function Perceptron(inputDimension, learningRate, threshold) {
  * @return {int} The score for the current input
  * @private
  */
-Perceptron.prototype.getScore_ = function() {
+BinaryPerceptron.prototype.getScore_ = function() {
 	var score = 0;
 	for (var i = 0; i < this.inputWeights_.length; i++) {
 		score += this.inputWeights_[i] * this.inputs_[i];
@@ -42,7 +42,7 @@ Perceptron.prototype.getScore_ = function() {
  * @param {Array.<float>} input The input to set
  * @private
  */
-Perceptron.prototype.setInput_ = function(input) {
+BinaryPerceptron.prototype.setInput_ = function(input) {
 	// Offset by one to keep bias constant.
 	for (var i = 1; i < this.inputs_.length; i++) {
 		this.inputs_[i] = input[i - 1];
@@ -51,11 +51,32 @@ Perceptron.prototype.setInput_ = function(input) {
 
 
 /**
+ * Gets the current weights of the perceptron.
+ * @return {Array.<float>} The perceptron weights
+ */
+BinaryPerceptron.prototype.getWeights = function() {
+	return this.inputWeights_.slice(0);
+};
+
+
+/**
+ * Sets the current weights of the perceptron.
+ * @return {Array.<float>} The perceptron weights
+ */
+BinaryPerceptron.prototype.setWeights = function(weights) {
+	if (weights.length != this.inputWeights_.length) {
+		throw 'Cannot change weight dimension';
+	}
+	return this.inputWeights_ = weights;
+};
+
+
+/**
  * Updates the weights of the perceptron (called after failed training)
  * @param {float} error The training error to correct
  * @private
  */
-Perceptron.prototype.updateWeights_ = function(error) {
+BinaryPerceptron.prototype.updateWeights_ = function(error) {
 	for (var i = 0; i < this.inputWeights_.length; i++) {
 		var delta = this.learningRate_ * error * this.inputs_[i];
 		this.inputWeights_[i] += delta;
@@ -70,7 +91,7 @@ Perceptron.prototype.updateWeights_ = function(error) {
  * @param {boolean} expected The classification expected.
  * @return {boolean} True if this training example passed, false otherwise
  */
-Perceptron.prototype.train = function(input, expected) {
+BinaryPerceptron.prototype.train = function(input, expected) {
 	if (input.length != this.inputs_.length - 1) {
 		throw 'Illegal input dimension';
 	}
@@ -102,7 +123,7 @@ Perceptron.prototype.train = function(input, expected) {
  * @param  {Array.<float>} input The input
  * @return {boolean}       The classification
  */
-Perceptron.prototype.classify = function(input) {
+BinaryPerceptron.prototype.classify = function(input) {
 	if (input.length != this.inputs_.length - 1) {
 		throw 'Illegal input dimension';
 	}
@@ -122,17 +143,20 @@ Perceptron.prototype.classify = function(input) {
  * @param  {int} maxIterations The maximum iterations allowed for this session.
  * @return {boolean} False if max iterations was reached, true otherwise.
  */
-Perceptron.prototype.trainSet = function(inputSet, expectedSet, maxIterations) {
+BinaryPerceptron.prototype.trainSet = function(inputSet, expectedSet, maxIterations, callback) {
 	if (inputSet.length != expectedSet.length) {
 		throw 'Input and expectation mismatch';
 	}
-	var allPassed = false;
+	var numberFailed = -1;
 	var iteration = 0;
-	while (!allPassed && iteration < maxIterations) {
-		allPassed = true;
+	while (numberFailed != 0 && iteration < maxIterations) {
+		numberFailed = 0;
 		for (var i = 0; i < inputSet.length; i++) {
-			allPassed = allPassed && this.train(inputSet[i], expectedSet[i]);
+			if(!this.train(inputSet[i], expectedSet[i])) {
+				numberFailed++;
+			}
 		}
+		callback(numberFailed, inputSet.length, iteration);
 		iteration++;
 	}
 	return iteration != maxIterations;
